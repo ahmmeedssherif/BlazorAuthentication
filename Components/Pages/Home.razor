@@ -1,0 +1,18 @@
+﻿@page "/"
+@using BlazorApp1.Data
+@using Microsoft.AspNetCore.Authorization
+@inject ApplicationDbContext _context
+@attribute [Authorize (Roles = "User")]
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@foreach (var user in _context.Users)
+{
+    <ul>
+        <li>@user.Id | @user.Email | <a href="/User/@user.Id">Show User Detail</a></li>
+    </ul>
+}
+

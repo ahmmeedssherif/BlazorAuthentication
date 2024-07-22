@@ -1,0 +1,86 @@
+@page "/Roles"
+@using System.ComponentModel.DataAnnotations
+@using BlazorApp1.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.ModelBinding
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext _context
+@inject RoleManager<IdentityRole> _RoleManager
+@attribute [Authorize (Roles = "Admin")]
+@rendermode InteractiveServer
+<PageTitle>Roles</PageTitle>
+<h3>Add Roles</h3>
+<EditForm Model="Role" OnValidSubmit="AddRole" FormName="AddRole">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+    <div class="input-group input-group-lg mb-3">
+        <InputText @bind-Value="Role.Name" class="form-control" placeholder="Role Name"/>
+        <button type="submit" class="btn btn-lg btn-primary">Add Role</button>
+    </div>
+    <ValidationMessage For="() => Role.Name" class="text-danger"/>
+</EditForm>
+
+<table class="table mt-4">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var role in rolesList)
+        {
+            <tr>
+                <td>@role.Name</td>
+                <td>
+                   <button class="btn btn-danger" @onclick="() => DeleteRole(role)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private IdentityRole Role = new IdentityRole();
+    private List<IdentityRole> rolesList = new List<IdentityRole>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        rolesList = await _context.Roles.ToListAsync();
+    }
+
+    private async Task AddRole()
+    {
+        if (!string.IsNullOrWhiteSpace(Role.Name))
+        {
+            if (!await _RoleManager.RoleExistsAsync(Role.Name))
+            {
+                var result = await _RoleManager.CreateAsync(Role);
+
+                if (result.Succeeded)
+                {
+                    await LoadRolesAsync();
+                    Role = new IdentityRole();
+                }
+            }
+        }
+    }
+
+    private async Task EditRole(IdentityRole role)
+    {
+        
+    }
+
+    private async Task DeleteRole(IdentityRole role)
+    {
+        _context.Roles.Remove(role);
+        await _context.SaveChangesAsync();
+        await LoadRolesAsync(); // Refresh the roles list
+    }
+}

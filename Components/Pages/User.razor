@@ -1,0 +1,96 @@
+@page "/User/{UserId}"
+@using BlazorApp1.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext _context
+@inject UserManager<ApplicationUser> _usermanager
+@inject SignInManager<ApplicationUser> _signinmanager
+@inject NavigationManager NavigationManager
+@attribute [Authorize (Roles = "Admin")]
+@rendermode InteractiveServer
+<h3>User Details</h3>
+
+@if (user != null)
+{
+    <ul>
+        <li>Id: @user.Id</li>
+        <li>Username: @user.UserName</li>
+        <li>Email: @user.Email</li>
+        <li>Is Email Confirmed: @user.EmailConfirmed</li>
+        <li>Phone Number: @user.PhoneNumber</li>
+        <li>Is Phone Number Confirmed: @user.PhoneNumberConfirmed</li>
+    </ul>
+
+    <h4>Available Roles</h4>
+    @foreach (var role in _context.Roles)
+    {
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" @onclick="() => ToggleRole(role.Id)" id="role-@role.Id" checked="@(selectedRoles.Any(r => r.Id == role.Id))">
+            <label class="form-check-label" for="role-@role.Id">
+                @role.Name
+            </label>
+        </div>
+    }
+
+    <h4>Selected Roles</h4>
+    @foreach (var role in selectedRoles)
+    {
+        <div>@role.Name</div>
+    }
+
+    <button class="btn btn-primary" @onclick="SaveRoles">Save Roles</button>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    [Parameter]
+    public string UserId { get; set; }
+
+    private ApplicationUser? user;
+    private List<IdentityRole> selectedRoles = new List<IdentityRole>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await _context.Users.FirstOrDefaultAsync(u => u.Id == UserId);
+        if (user != null)
+        {
+            var userRoles = await _usermanager.GetRolesAsync(user);
+            selectedRoles = _context.Roles.Where(r => userRoles.Contains(r.Name)).ToList();
+        }
+    }
+
+    private async Task ToggleRole(string roleId)
+    {
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role != null)
+        {
+            if (selectedRoles.Any(r => r.Id == roleId))
+            {
+                selectedRoles.Remove(role);
+            }
+            else
+            {
+                selectedRoles.Add(role);
+            }
+        }
+    }
+
+    private async Task SaveRoles()
+    {
+        if (user != null && selectedRoles.Any())
+        {
+            var currentRoles = await _usermanager.GetRolesAsync(user);
+
+            var rolesToAdd = selectedRoles.Select(r => r.Name).Except(currentRoles).ToList();
+            var rolesToRemove = currentRoles.Except(selectedRoles.Select(r => r.Name)).ToList();
+
+            await _usermanager.AddToRolesAsync(user, rolesToAdd);
+            await _usermanager.RemoveFromRolesAsync(user, rolesToRemove);
+
+        }
+    }
+}
