@@ -7,8 +7,8 @@ namespace BlazorApp1.Services
 {
     public class EmailSender : IEmailSender
     {
-        private readonly string _fromEmail = "ahmmmeedsherif@outlook.com";
-        private readonly string _fromPassword = "1LoinLoin$$212";
+        private readonly string _fromEmail = "[Your Email at outlook]";
+        private readonly string _fromPassword = "[Your Password at outlook]";
         private readonly string _smtpHost = "smtp-mail.outlook.com";
         private readonly int _smtpPort = 587;
 
